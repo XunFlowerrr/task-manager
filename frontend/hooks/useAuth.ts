@@ -1,47 +1,24 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * A hook that handles client-side auth state synchronization
- * This ensures the token from NextAuth session is stored in localStorage
- * for use with API requests that require authentication
+ * A simplified hook that provides authentication state and methods
  */
 export function useAuth() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Sync the token to localStorage when the session changes
-  useEffect(() => {
-    if (session?.user?.token) {
-      localStorage.setItem("token", session.user.token as string);
-    } else {
-      // If no session or no token, clear the localStorage token
-      if (!session) {
-        localStorage.removeItem("token");
-      }
-    }
-  }, [session]);
-
-  // Logout function
+  // Logout function that handles NextAuth signout
   const logout = async () => {
-    // Clear local storage first
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-    }
-
-    // End NextAuth session
     await signOut({ redirect: false });
-
-    // Redirect to login page
     router.push("/login");
   };
 
   return {
-    token: session?.user?.token as string | undefined,
-    isAuthenticated: !!session,
+    isAuthenticated: status === "authenticated",
+    isLoading: status === "loading",
     user: session?.user,
     logout,
   };
@@ -49,11 +26,18 @@ export function useAuth() {
 
 /**
  * A utility function to get the auth token for API calls
- * Can be used outside of React components
+ * Uses the session token without localStorage
  */
 export function getAuthToken(): string | null {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
+  // This function will be used by API clients
+  if (typeof window === "undefined") {
+    return null; // No token on server side
   }
-  return null;
+
+  // The token should come from the session
+  // This will be populated by the callbacks in NextAuth
+  const session = JSON.parse(
+    localStorage.getItem("next-auth.session-token") || "{}"
+  );
+  return session?.user?.token || null;
 }

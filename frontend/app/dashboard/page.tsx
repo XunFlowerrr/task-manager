@@ -21,10 +21,8 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Dashboard() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
-  const { data: session } = useSession();
-  const user = session?.user || null;
 
   // Redirect if not authenticated
   useEffect(() => {

@@ -1,34 +1,31 @@
-export default async function userLogIn(
-  userEmail: string,
-  userPassword: string
-) {
-  const response = await fetch(`http://localhost:5000/api/v1/auth/login`, {
+/**
+ * Authenticates a user against the backend API
+ * Returns a user object with token that NextAuth can use
+ */
+export default async function userLogIn(email: string, password: string) {
+  const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+
+  const response = await fetch(`${backendUrl}/api/v1/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      email: userEmail,
-      password: userPassword,
-    }),
+    body: JSON.stringify({ email, password }),
     credentials: "include",
   });
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.error || "Failed to login");
+    const error = await response.json();
+    throw new Error(error.error || "Authentication failed");
   }
 
-  // Don't use localStorage in server-side code
-  // We'll store the token in the session instead
-  // and handle localStorage in client components
+  const data = await response.json();
 
-  // Return user object with necessary data for NextAuth
+  // Return user object that NextAuth can store in the session
   return {
-    id: data.userId || "user",
-    email: userEmail,
-    name: data.name || userEmail,
+    id: data.userId,
+    name: data.name || email.split("@")[0],
+    email: email,
     token: data.token,
   };
 }

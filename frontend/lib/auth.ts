@@ -5,12 +5,7 @@ import userLogIn from "./userLogIn";
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      // The name to display on the sign in form (e.g. "Sign in with...")
       name: "Credentials",
-      // `credentials` is used to generate a form on the sign in page.
-      // You can specify which fields should be submitted, by adding keys to the `credentials` object.
-      // e.g. domain, username, password, 2FA token, etc.
-      // You can pass any HTML attribute to the <input> tag through the object.
       credentials: {
         email: {
           label: "Email",
@@ -19,12 +14,13 @@ export const authOptions: NextAuthOptions = {
         },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials) {
           return null;
         }
 
         try {
+          // userLogIn will return user object with token from the backend
           const user = await userLogIn(credentials.email, credentials.password);
           return user;
         } catch (error) {
@@ -36,14 +32,25 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
+    // Store the token in the JWT
     async jwt({ token, user }) {
+      // When signing in for first time, user will have token
       if (user) {
-        return { ...token, ...user };
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.token = user.token; // Store the auth token from backend
       }
       return token;
     },
+    // Make token available on the client session
     async session({ session, token }) {
-      session.user = token as any;
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        session.user.token = token.token as string;
+      }
       return session;
     },
   },
@@ -51,5 +58,5 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/auth/error",
   },
-  debug: false, // Set to false to disable DEBUG_ENABLED warnings
+  debug: process.env.NODE_ENV === "development",
 };

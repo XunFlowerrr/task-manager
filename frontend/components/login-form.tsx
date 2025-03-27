@@ -25,27 +25,27 @@ export function LoginForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+
     try {
-      const res = await signIn("credentials", {
+      const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
       });
-      if (res?.error) {
-        console.error("Login failed:", res.error);
-        setErrorMessage("Login failed. Please try again.");
-      }
-      if (res?.ok) {
-        console.log("Login successful");
-        setErrorMessage(null);
+
+      if (result?.error) {
+        setErrorMessage("Invalid email or password. Please try again.");
+      } else {
         router.push("/dashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage("An unexpected error occurred.");
+      setErrorMessage("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
