@@ -24,11 +24,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await userLogIn(credentials.email, credentials.password);
-
-        if (user) {
+        try {
+          const user = await userLogIn(credentials.email, credentials.password);
           return user;
-        } else {
+        } catch (error) {
+          console.error("Login authorization error:", error);
           return null;
         }
       },
@@ -37,14 +37,19 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user }) {
-      return { ...token, ...user };
+      if (user) {
+        return { ...token, ...user };
+      }
+      return token;
     },
-    async session({ session, token, user }) {
+    async session({ session, token }) {
       session.user = token as any;
       return session;
     },
   },
   pages: {
-    signIn: "/sign-in",
+    signIn: "/login",
+    error: "/auth/error",
   },
+  debug: false, // Set to false to disable DEBUG_ENABLED warnings
 };

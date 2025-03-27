@@ -3,6 +3,8 @@
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +42,27 @@ export function ModeToggle() {
 }
 
 export default function ModePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/auth/me`, {
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (!res.ok) {
+          router.push("/login");
+        }
+      } catch (error) {
+        router.push("/login");
+      }
+    }
+    checkAuth();
+  }, [router]);
+
   return (
     <div className="flex h-screen items-center justify-center">
       <ModeToggle />
