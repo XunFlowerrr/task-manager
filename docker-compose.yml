@@ -1,0 +1,27 @@
+version: '3.4'
+
+services:
+  # taskmanagement:
+  #   image: taskmanagement
+  #   build:
+  #     context: .
+  #     dockerfile: ./Dockerfile
+  #   environment:
+  #     NODE_ENV: production
+  #   ports:
+  #     - 3000:3000
+
+  postgres-db:
+    image: postgres:17.4
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: taskmanagement
+    ports:
+      - 5432:5432
+
+    volumes:
+      - type: bind
+        source: ./database/init.sql
+        target: /docker-entrypoint-initdb.d/init.sql

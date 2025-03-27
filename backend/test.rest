@@ -1,0 +1,111 @@
+###################################################
+# Register a new user
+POST http://localhost:3000/api/v1/auth/register HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "xun",
+  "email": "xun@gmail.com",
+  "password": "123456789"
+}
+
+###################################################
+# Login with the registered user
+POST http://localhost:3000/api/v1/auth/login HTTP/1.1
+Content-Type: application/json
+
+{
+  "email": "xun@gmail.com",
+  "password": "123456789"
+}
+
+###################################################
+# Get profile (replace <token> with the token from the login response)
+GET http://localhost:3000/api/v1/auth/me HTTP/1.1
+Authorization: Bearer <token>
+
+###################################################
+# Create a new project (replace <token> with the token)
+POST http://localhost:3000/api/v1/projects HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "projectName": "Project 1",
+  "projectDescription": "This is project 1",
+  "category": "Web Development"
+}
+
+###################################################
+# Get all projects
+GET http://localhost:3000/api/v1/projects HTTP/1.1
+Authorization: Bearer <token>
+
+###################################################
+# Get details for a specific project (replace <projectId> with the created project id)
+GET http://localhost:3000/api/v1/projects/00001 HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMDAwMSIsImVtYWlsIjoieHVuQGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzQyOTA4NjYzLCJleHAiOjE3NDQyMDQ2NjN9.C--VRI4S8Rrl3ITR9_ggAeyjl_olfTrQoZGLJWfzW7w
+
+###################################################
+# Update the project (replace <projectId> with the correct id)
+PUT http://localhost:3000/api/v1/projects/<projectId> HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "projectName": "Project 1 Updated",
+  "projectDescription": "Updated description",
+  "category": "Mobile Development"
+}
+
+###################################################
+# Delete the project (replace <projectId> with the correct id)
+DELETE http://localhost:3000/api/v1/projects/<projectId> HTTP/1.1
+Authorization: Bearer <token>
+
+###################################################
+# Create a new task (ensure the project exists; use its <projectId>)
+POST http://localhost:3000/api/v1/tasks HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "projectId": "<projectId>",
+  "taskName": "Task 1",
+  "taskDescription": "This is task 1",
+  "startDate": "2023-11-01T00:00:00Z",
+  "dueDate": "2023-11-10T00:00:00Z",
+  "status": "pending",
+  "priority": 1
+}
+
+###################################################
+# Get all tasks for a project (replace <projectId>)
+GET http://localhost:3000/api/v1/tasks?projectId=<projectId> HTTP/1.1
+Authorization: Bearer <token>
+
+###################################################
+# Get details for a specific task (replace <taskId> with the created task id)
+GET http://localhost:3000/api/v1/tasks/<taskId> HTTP/1.1
+Authorization: Bearer <token>
+
+###################################################
+# Update a task (replace <taskId> with the correct id)
+PUT http://localhost:3000/api/v1/tasks/<taskId> HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "taskName": "Task 1 Updated",
+  "taskDescription": "Updated task description",
+  "startDate": "2023-11-02T00:00:00Z",
+  "dueDate": "2023-11-12T00:00:00Z",
+  "status": "in-progress",
+  "priority": 2
+}
+
+###################################################
+# Delete a task (replace <taskId> with the correct id)
+DELETE http://localhost:3000/api/v1/tasks/<taskId> HTTP/1.1
+Authorization: Bearer <token>
+

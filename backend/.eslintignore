@@ -1,0 +1,3 @@
+node_modules
+dist
+// ...any other files or folders to be ignored...
