@@ -12,20 +12,35 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ReduxSidebarProvider } from "@/components/ui/redux-sidebar";
-import { SidebarStateDisplay } from "@/components/sidebar-state-display";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getAllProjects, Project } from "@/lib/api/projects";
 
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>();
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
+      return;
     }
+
+    // Only fetch projects if authenticated
+    const fetchProjects = async () => {
+      try {
+        const fetchedProjects = await getAllProjects();
+        console.log(fetchedProjects);
+        setProjects(fetchedProjects);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
+    };
+
+    fetchProjects();
   }, [isAuthenticated, router]);
 
   // If not authenticated, show minimal UI while redirecting
