@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import NextAuthProvider from "@/providers/NextAuthProvider";
+import { ReduxProvider } from "@/providers/ReduxProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +41,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <ReduxProvider>{children}</ReduxProvider>
           </ThemeProvider>
         </body>
       </NextAuthProvider>

@@ -10,13 +10,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { ReduxSidebarProvider } from "@/components/ui/redux-sidebar";
+import { SidebarStateDisplay } from "@/components/sidebar-state-display";
 import { useAuth } from "@/hooks/useAuth";
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -41,7 +38,7 @@ export default function Dashboard() {
   }
 
   return (
-    <SidebarProvider>
+    <ReduxSidebarProvider>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -75,6 +72,6 @@ export default function Dashboard() {
           <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </ReduxSidebarProvider>
   );
 }
