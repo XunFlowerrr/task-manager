@@ -14,14 +14,14 @@ export interface ProjectMember {
 /**
  * Add a member to a project
  */
-export async function addProjectMember(projectId: string, userId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function addProjectMember(projectId: string, userId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-members/${projectId}/members`, {
     method: "POST",
@@ -43,14 +43,14 @@ export async function addProjectMember(projectId: string, userId: string): Promi
 /**
  * Remove a member from a project
  */
-export async function removeProjectMember(projectId: string, userId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function removeProjectMember(projectId: string, userId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-members/${projectId}/members/${userId}`, {
     method: "DELETE",
@@ -71,14 +71,14 @@ export async function removeProjectMember(projectId: string, userId: string): Pr
 /**
  * Get all members of a project
  */
-export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getProjectMembers(projectId: string, token?: string): Promise<ProjectMember[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-members/${projectId}/members`, {
     method: "GET",

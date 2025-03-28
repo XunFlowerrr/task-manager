@@ -16,12 +16,14 @@ export interface ProjectInvitation {
 /**
  * Send an invitation to a user to join a project
  */
-export async function sendProjectInvitation(projectId: string, userId: string): Promise<{ message: string; invitationId: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function sendProjectInvitation(projectId: string, userId: string, token?: string): Promise<{ message: string; invitationId: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-invitations/${projectId}/invitations`, {
     method: "POST",
@@ -43,12 +45,14 @@ export async function sendProjectInvitation(projectId: string, userId: string): 
 /**
  * Accept a project invitation
  */
-export async function acceptProjectInvitation(invitationId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function acceptProjectInvitation(invitationId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-invitations/${invitationId}/accept`, {
     method: "PUT",
@@ -69,12 +73,14 @@ export async function acceptProjectInvitation(invitationId: string): Promise<{ m
 /**
  * Decline a project invitation
  */
-export async function declineProjectInvitation(invitationId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function declineProjectInvitation(invitationId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-invitations/${invitationId}/decline`, {
     method: "DELETE",
@@ -95,12 +101,14 @@ export async function declineProjectInvitation(invitationId: string): Promise<{ 
 /**
  * Get all invitations for the current user
  */
-export async function getUserInvitations(): Promise<ProjectInvitation[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getUserInvitations(token?: string): Promise<ProjectInvitation[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-invitations/user`, {
     method: "GET",
@@ -121,12 +129,14 @@ export async function getUserInvitations(): Promise<ProjectInvitation[]> {
 /**
  * Get all invitations sent for a specific project
  */
-export async function getProjectInvitations(projectId: string): Promise<ProjectInvitation[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getProjectInvitations(projectId: string, token?: string): Promise<ProjectInvitation[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/project-invitations/${projectId}/invitations`, {
     method: "GET",

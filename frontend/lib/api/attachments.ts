@@ -29,12 +29,14 @@ export interface UpdateAttachmentData {
 /**
  * Create a new attachment for a task
  */
-export async function createAttachment(data: CreateAttachmentData): Promise<{ message: string; attachmentId: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function createAttachment(data: CreateAttachmentData, token?: string): Promise<{ message: string; attachmentId: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments`, {
     method: "POST",
@@ -56,12 +58,14 @@ export async function createAttachment(data: CreateAttachmentData): Promise<{ me
 /**
  * Get all attachments for a specific task
  */
-export async function getTaskAttachments(taskId: string): Promise<Attachment[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getTaskAttachments(taskId: string, token?: string): Promise<Attachment[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments?taskId=${taskId}`, {
     method: "GET",
@@ -82,12 +86,14 @@ export async function getTaskAttachments(taskId: string): Promise<Attachment[]> 
 /**
  * Get all attachments across all tasks the user has access to
  */
-export async function getAllAttachments(): Promise<Attachment[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getAllAttachments(token?: string): Promise<Attachment[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments`, {
     method: "GET",
@@ -108,12 +114,14 @@ export async function getAllAttachments(): Promise<Attachment[]> {
 /**
  * Get a specific attachment by ID
  */
-export async function getAttachment(id: string): Promise<Attachment> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getAttachment(id: string, token?: string): Promise<Attachment> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments/${id}`, {
     method: "GET",
@@ -134,12 +142,14 @@ export async function getAttachment(id: string): Promise<Attachment> {
 /**
  * Update an attachment
  */
-export async function updateAttachment(id: string, data: UpdateAttachmentData): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function updateAttachment(id: string, data: UpdateAttachmentData, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments/${id}`, {
     method: "PUT",
@@ -161,12 +171,14 @@ export async function updateAttachment(id: string, data: UpdateAttachmentData): 
 /**
  * Delete an attachment
  */
-export async function deleteAttachment(id: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function deleteAttachment(id: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/attachments/${id}`, {
     method: "DELETE",

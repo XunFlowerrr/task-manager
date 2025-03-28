@@ -30,17 +30,19 @@ export interface UpdateProjectData {
 /**
  * Create a new project
  */
-export async function createProject(data: CreateProjectData): Promise<{ message: string; projectId: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function createProject(data: CreateProjectData, token?: string): Promise<{ message: string; projectId: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/projects`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.user.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
@@ -81,17 +83,19 @@ export async function getAllProjectsClient(token: string): Promise<Project[]> {
 /**
  * Get all projects that the user has access to
  */
-export async function getAllProjects(): Promise<Project[]> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getAllProjects(token?: string): Promise<Project[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/projects`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${session.user.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
@@ -107,17 +111,19 @@ export async function getAllProjects(): Promise<Project[]> {
 /**
  * Get a specific project by ID
  */
-export async function getProject(id: string): Promise<Project> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getProject(id: string, token?: string): Promise<Project> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/projects/${id}`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${session.user.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
@@ -133,17 +139,19 @@ export async function getProject(id: string): Promise<Project> {
 /**
  * Update a project
  */
-export async function updateProject(id: string, data: UpdateProjectData): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function updateProject(id: string, data: UpdateProjectData, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/projects/${id}`, {
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${session.user.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
@@ -160,17 +168,19 @@ export async function updateProject(id: string, data: UpdateProjectData): Promis
 /**
  * Delete a project
  */
-export async function deleteProject(id: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function deleteProject(id: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/projects/${id}`, {
     method: "DELETE",
     headers: {
-      Authorization: `Bearer ${session.user.token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });

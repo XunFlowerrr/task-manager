@@ -1,4 +1,6 @@
 import { getAuthToken } from "@/hooks/useAuth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
@@ -70,11 +72,13 @@ export async function login(data: LoginData): Promise<LoginResponse> {
 /**
  * Get current user info
  */
-export async function getCurrentUser() {
-  const token = getAuthToken();
-
+export async function getCurrentUser(token?: string) {
   if (!token) {
-    throw new Error("No authentication token");
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
 
   const response = await fetch(`${API_URL}/auth/me`, {

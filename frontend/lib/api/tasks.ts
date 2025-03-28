@@ -47,12 +47,14 @@ export interface UpdateTaskData {
 /**
  * Create a new task
  */
-export async function createTask(data: CreateTaskData): Promise<{ message: string; taskId: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function createTask(data: CreateTaskData, token?: string): Promise<{ message: string; taskId: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks`, {
     method: "POST",
@@ -74,12 +76,14 @@ export async function createTask(data: CreateTaskData): Promise<{ message: strin
 /**
  * Get all tasks for a project
  */
-export async function getAllTasks(projectId: string): Promise<Task[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getAllTasks(projectId: string, token?: string): Promise<Task[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks?projectId=${projectId}`, {
     method: "GET",
@@ -100,12 +104,14 @@ export async function getAllTasks(projectId: string): Promise<Task[]> {
 /**
  * Get a specific task by ID
  */
-export async function getTask(id: string): Promise<Task> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getTask(id: string, token?: string): Promise<Task> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${id}`, {
     method: "GET",
@@ -126,12 +132,14 @@ export async function getTask(id: string): Promise<Task> {
 /**
  * Update a task
  */
-export async function updateTask(id: string, data: UpdateTaskData): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function updateTask(id: string, data: UpdateTaskData, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${id}`, {
     method: "PUT",
@@ -153,12 +161,14 @@ export async function updateTask(id: string, data: UpdateTaskData): Promise<{ me
 /**
  * Delete a task
  */
-export async function deleteTask(id: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function deleteTask(id: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${id}`, {
     method: "DELETE",
@@ -179,12 +189,14 @@ export async function deleteTask(id: string): Promise<{ message: string }> {
 /**
  * Get assignees for a task
  */
-export async function getTaskAssignees(taskId: string): Promise<Assignee[]> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function getTaskAssignees(taskId: string, token?: string): Promise<Assignee[]> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${taskId}/assignees`, {
     method: "GET",
@@ -205,12 +217,14 @@ export async function getTaskAssignees(taskId: string): Promise<Assignee[]> {
 /**
  * Assign a user to a task
  */
-export async function assignUserToTask(taskId: string, userId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function assignUserToTask(taskId: string, userId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${taskId}/assignees`, {
     method: "POST",
@@ -232,12 +246,14 @@ export async function assignUserToTask(taskId: string, userId: string): Promise<
 /**
  * Remove a user assignment from a task
  */
-export async function unassignUserFromTask(taskId: string, userId: string): Promise<{ message: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.token) {
-    throw new Error("No authentication token");
+export async function unassignUserFromTask(taskId: string, userId: string, token?: string): Promise<{ message: string }> {
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
   }
-  const token = session.user.token;
 
   const response = await fetch(`${API_URL}/tasks/${taskId}/assignees/${userId}`, {
     method: "DELETE",
@@ -255,9 +271,10 @@ export async function unassignUserFromTask(taskId: string, userId: string): Prom
   return response.json();
 }
 
-// Original server-side version
+/**
+ * Get tasks assigned to the current user
+ */
 export async function getUserTasks(token?: string): Promise<Task[]> {
-  // If token is provided, use it; otherwise, get it from the session
   if (!token) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.token) {
@@ -270,6 +287,7 @@ export async function getUserTasks(token?: string): Promise<Task[]> {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     },
   });
 
