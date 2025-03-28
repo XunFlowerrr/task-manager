@@ -15,12 +15,18 @@ import { ReduxSidebarProvider } from "@/components/ui/redux-sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getAllProjects, Project } from "@/lib/api/projects";
+import { getAllProjectsClient, Project } from "@/lib/api/projects";
+import { Folders } from "lucide-react";
+import { getUserTasks, Task } from "@/lib/api/tasks";
+import SummaryCard from "@/components/summary-card";
+import { CalendarClock } from "lucide-react";
+import { AlignLeft } from "lucide-react";
 
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>();
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -29,19 +35,34 @@ export default function Dashboard() {
       return;
     }
 
-    // Only fetch projects if authenticated
-    const fetchProjects = async () => {
-      try {
-        const fetchedProjects = await getAllProjects();
-        console.log(fetchedProjects);
-        setProjects(fetchedProjects);
-      } catch (error) {
-        console.error("Failed to fetch projects:", error);
-      }
-    };
+    // Only fetch data if authenticated and we have a token
+    if (user?.token) {
+      // Only fetch projects if authenticated
+      const fetchProjects = async () => {
+        try {
+          const fetchedProjects = await getAllProjectsClient(user.token!);
+          console.log(fetchedProjects);
+          setProjects(fetchedProjects);
+        } catch (error) {
+          console.error("Failed to fetch projects:", error);
+        }
+      };
 
-    fetchProjects();
-  }, [isAuthenticated, router]);
+      const fetchTasks = async () => {
+        try {
+          // Use the client version with the token from user context
+          const fetchedTasks = await getUserTasks(user.token!);
+          console.log(fetchedTasks);
+          setTasks(fetchedTasks);
+        } catch (error) {
+          console.error("Failed to fetch tasks:", error);
+        }
+      };
+
+      fetchProjects();
+      fetchTasks();
+    }
+  }, [isAuthenticated, router, user]);
 
   // If not authenticated, show minimal UI while redirecting
   if (!isAuthenticated) {
@@ -80,9 +101,29 @@ export default function Dashboard() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
+            <SummaryCard
+              icon={<CalendarClock />}
+              label="Total today tasks"
+              data={
+                tasks.filter(
+                  (task) =>
+                    task.due_date === new Date().toISOString().split("T")[0]
+                ).length || 0
+              }
+              onClick={{ url: "/tasks" }}
+            />
+            <SummaryCard
+              icon={<AlignLeft />}
+              label="Total pending tasks"
+              data={tasks.length || 0}
+              onClick={{ url: "/tasks" }}
+            />
+            <SummaryCard
+              icon={<Folders />}
+              label="Total Projects"
+              data={projects?.length || 0}
+              onClick={{ url: "/projects" }}
+            />
           </div>
           <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
         </div>
