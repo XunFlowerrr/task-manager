@@ -14,10 +14,7 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
@@ -26,27 +23,16 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import Image from "next/image";
+import LogoSidebar from "./logo-sidebar";
+import { ProjectNav } from "./project-nav";
+import { MenuNav } from "./menu-nav";
+import { useState } from "react";
+import { getAllProjects, Project } from "@/lib/api/projects";
 
 // This is sample data.
 const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
+  projectNev: [
     {
       title: "Playground",
       url: "#",
@@ -154,6 +140,22 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+  const [projects, setProjects] = useState<Project[]>();
+
+  // Fetch projects from the API
+  React.useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await getAllProjects(user?.token!);
+        console.log("Fetched projects:", response);
+        setProjects(response);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   // Format user data for NavUser component
   const userData = {
@@ -165,11 +167,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <LogoSidebar />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <ProjectNav items={projects} />
+        <MenuNav projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />
