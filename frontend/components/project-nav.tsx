@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ChevronRight, icons, type LucideIcon } from "lucide-react";
 import { LayoutList } from "lucide-react";
 import { UsersRound } from "lucide-react";
@@ -33,18 +34,22 @@ const subMenuItems = [
   {
     title: "Project Dashboard",
     icons: <House />,
+    href: "", // Base path will be appended with project ID
   },
   {
     title: "Tasks",
     icons: <LayoutList />,
+    href: "/tasks",
   },
   {
     title: "Members",
     icons: <UsersRound />,
+    href: "/team",
   },
   {
     title: "Settings",
     icons: <Settings />,
+    href: "/settings",
   },
 ];
 
@@ -77,10 +82,14 @@ export function ProjectNav({ items }: { items: Project[] | undefined }) {
                   {subMenuItems?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       <SidebarMenuSubButton asChild>
-                        <div>
-                          {subItem.icons}
-                          <span>{subItem.title}</span>
-                        </div>
+                        <Link
+                          href={`/dashboard/projects/${item.project_id}${subItem.href}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            {subItem.icons}
+                            <span>{subItem.title}</span>
+                          </div>
+                        </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                   ))}

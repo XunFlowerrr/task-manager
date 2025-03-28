@@ -11,8 +11,9 @@ export interface Project {
   project_description: string;
   owner_id: string;
   category: string;
-  created_at: string;
-  updated_at: string;
+  created_date: string; // Changed from created_at to match backend
+  updated_date: string; // Changed from updated_at to match backend
+  progress?: number; // Added progress field that's coming from backend
 }
 
 export interface CreateProjectData {
