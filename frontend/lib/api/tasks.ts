@@ -254,3 +254,29 @@ export async function unassignUserFromTask(taskId: string, userId: string): Prom
 
   return response.json();
 }
+
+// Original server-side version
+export async function getUserTasks(token?: string): Promise<Task[]> {
+  // If token is provided, use it; otherwise, get it from the session
+  if (!token) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.token) {
+      throw new Error("No authentication token");
+    }
+    token = session.user.token;
+  }
+
+  const response = await fetch(`${API_URL}/tasks/me`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch user tasks");
+  }
+
+  return response.json();
+}

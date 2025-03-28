@@ -427,3 +427,33 @@ export async function getTaskAssignees(req, res) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
+
+export async function getUserTasks(req, res) {
+  log.info("getUserTasks: Request received");
+  try {
+    const userId = req.user.userId;
+
+    // Get tasks with more details and assignee information
+    const tasks = await query(
+      `SELECT t.*, p.project_name,
+        (SELECT json_agg(json_build_object('user_id', u.user_id, 'username', u.username, 'email', u.email))
+         FROM task_assignee ta
+         JOIN users u ON ta.user_id = u.user_id
+         WHERE ta.task_id = t.task_id) as assignees
+       FROM task t
+       JOIN task_assignee ta ON t.task_id = ta.task_id
+       JOIN project p ON t.project_id = p.project_id
+       WHERE ta.user_id = $1
+       ORDER BY t.due_date ASC NULLS LAST, t.priority DESC`,
+      [userId]
+    );
+
+    log.info(
+      `getUserTasks: Retrieved ${tasks.rowCount} tasks for user ${userId}`
+    );
+    res.status(200).json(tasks.rows);
+  } catch (error) {
+    log.error("getUserTasks error: " + error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}

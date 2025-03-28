@@ -8,6 +8,7 @@ import {
   assignUser,
   unassignUser,
   getTaskAssignees,
+  getUserTasks,
 } from "../controllers/tasks.js";
 import { authMiddleware } from "../middleware/auth.js";
 
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get("/", getAllTasks);
+router.get("/me", getUserTasks);
 router.get("/:id", getTask);
 router.post("/", createTask);
 router.put("/:id", updateTask);

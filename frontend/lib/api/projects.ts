@@ -55,6 +55,30 @@ export async function createProject(data: CreateProjectData): Promise<{ message:
 }
 
 /**
+ * Get all projects that the user has access to - client version
+ */
+export async function getAllProjectsClient(token: string): Promise<Project[]> {
+  if (!token) {
+    throw new Error("No authentication token");
+  }
+
+  const response = await fetch(`${API_URL}/projects`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch projects");
+  }
+
+  return response.json();
+}
+
+/**
  * Get all projects that the user has access to
  */
 export async function getAllProjects(): Promise<Project[]> {
