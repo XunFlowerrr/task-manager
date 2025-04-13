@@ -9,17 +9,36 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAllProjectsClient, Project } from "@/lib/api/projects";
-import { Folders } from "lucide-react";
+import { Folders, Info, Plus } from "lucide-react";
 import { getUserTasks, Task } from "@/lib/api/tasks";
 import SummaryCard from "@/components/summary-card";
 import { CalendarClock } from "lucide-react";
 import { AlignLeft } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import Link from "next/link";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { CreateProjectDialog } from "@/components/create-project-dialog";
 
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>();
+  const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -30,32 +49,47 @@ export default function Dashboard() {
 
     // Only fetch data if authenticated and we have a token
     if (user?.token) {
-      // Only fetch projects if authenticated
-      const fetchProjects = async () => {
-        try {
-          const fetchedProjects = await getAllProjectsClient(user.token!);
-          console.log(fetchedProjects);
-          setProjects(fetchedProjects);
-        } catch (error) {
-          console.error("Failed to fetch projects:", error);
-        }
-      };
-
-      const fetchTasks = async () => {
-        try {
-          // Use the client version with the token from user context
-          const fetchedTasks = await getUserTasks(user.token!);
-          console.log(fetchedTasks);
-          setTasks(fetchedTasks);
-        } catch (error) {
-          console.error("Failed to fetch tasks:", error);
-        }
-      };
-
       fetchProjects();
       fetchTasks();
     }
-  }, [isAuthenticated, router, user]);
+  }, [isAuthenticated, user, router]);
+
+  const fetchProjects = async () => {
+    if (!user?.token) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const fetchedProjects = await getAllProjectsClient(user.token!);
+      setProjects(fetchedProjects);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+      setError("Failed to fetch projects. Please try again later.");
+      toast.error("Failed to load projects");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTasks = async () => {
+    if (!user?.token) return;
+
+    try {
+      // Use the client version with the token from user context
+      const fetchedTasks = await getUserTasks(user.token!);
+      setTasks(fetchedTasks);
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+      toast.error("Failed to load tasks");
+    }
+  };
+
+  // Client-side pagination logic
+  const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedProjects = projects.slice(startIndex, endIndex);
 
   // If not authenticated, show minimal UI while redirecting
   if (!isAuthenticated) {
@@ -106,7 +140,128 @@ export default function Dashboard() {
               onClick={{ url: "/projects" }}
             />
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+
+          <div className="bg-muted/50 p-4 flex-1 rounded-xl md:min-h-min flex flex-col space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Projects</h2>
+              <CreateProjectDialog
+                token={user?.token}
+                onProjectCreated={fetchProjects}
+                triggerButton={
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" /> New Project
+                  </Button>
+                }
+              />
+            </div>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-2">Loading projects...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-destructive/10 text-destructive rounded-md p-4 flex items-center">
+                <Info className="w-5 h-5 mr-2" />
+                <span>{error}</span>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="bg-muted p-8 rounded-md text-center">
+                <Folders className="w-10 h-10 mx-auto text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-medium">No projects found</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  You haven't created any projects yet.
+                </p>
+                <CreateProjectDialog
+                  token={user?.token}
+                  onProjectCreated={fetchProjects}
+                  open={open}
+                  onOpenChange={setOpen}
+                  triggerButton={
+                    <Button className="mt-4">
+                      <Plus className="mr-2 h-4 w-4" /> Create a project
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {paginatedProjects.map((project) => (
+                    <Link
+                      href={`/dashboard/projects/${project.project_id}`}
+                      key={project.project_id}
+                      className="block p-4 bg-background hover:bg-accent/50 rounded-md shadow-sm border transition-colors"
+                    >
+                      <h3 className="text-lg font-bold">
+                        {project.project_name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {project.project_description ||
+                          "No description available."}
+                      </p>
+                      {project.progress !== undefined && (
+                        <div className="mt-2">
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary"
+                              style={{ width: `${project.progress}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 text-right">
+                            {project.progress}% complete
+                          </p>
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <Pagination className="mt-4">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() =>
+                            setCurrentPage((p) => Math.max(1, p - 1))
+                          }
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            isActive={currentPage === i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() =>
+                            setCurrentPage((p) => Math.min(totalPages, p + 1))
+                          }
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </SidebarInset>
     </ReduxSidebarProvider>

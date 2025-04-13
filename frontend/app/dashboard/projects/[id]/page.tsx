@@ -17,7 +17,20 @@ import {
   ClipboardList,
   Clock,
   Users,
+  Settings,
+  MoreHorizontal,
+  Plus,
+  UserPlus,
+  Download,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ProjectDashboard() {
   const { isAuthenticated, user } = useAuth();
@@ -158,14 +171,45 @@ export default function ProjectDashboard() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold">{project?.project_name}</h1>
-            <p className="text-muted-foreground">
-              {project?.project_description || "No description"}
-            </p>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">{project?.project_name}</h1>
+              <p className="text-muted-foreground">
+                {project?.project_description || "No description"}
+              </p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/projects/${projectId}/tasks/new`}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/projects/${projectId}/team/invite`}>
+                    <UserPlus className="mr-2 h-4 w-4" /> Invite Team Member
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/projects/${projectId}/export`}>
+                    <Download className="mr-2 h-4 w-4" /> Export Project
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/projects/${projectId}/settings`}>
+                    <Settings className="mr-2 h-4 w-4" /> Settings
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <div className="grid auto-rows-min gap-4 md:grid-cols-5">
+          <div className="grid auto-rows-min gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             <SummaryCard
               icon={<ClipboardList />}
               label="Total Tasks"
