@@ -1,19 +1,6 @@
 "use client";
 
 import * as React from "react";
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react";
-
 import { NavUser } from "@/components/nav-user";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -22,140 +9,61 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
-import Image from "next/image";
 import LogoSidebar from "./logo-sidebar";
 import { ProjectNav } from "./project-nav";
-import { MenuNav } from "./menu-nav";
 import { useState } from "react";
 import { getAllProjects, Project } from "@/lib/api/projects";
-
-// This is sample data.
-const data = {
-  projectNev: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+import Link from "next/link";
+import {
+  ChevronRight,
+  Home,
+  LayoutDashboard,
+  Plus,
+  Settings,
+  FileText,
+  LayoutList, // Added for Tasks icon
+} from "lucide-react";
+import { CreateProjectDialog } from "./create-project-dialog";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Fetch projects from the API
   React.useEffect(() => {
     const fetchProjects = async () => {
       try {
         const response = await getAllProjects(user?.token!);
-        console.log("Fetched projects:", response);
         setProjects(response);
       } catch (error) {
         console.error("Error fetching projects:", error);
       }
     };
 
-    fetchProjects();
-  }, []);
+    if (user?.token) {
+      fetchProjects();
+    }
+  }, [user]);
+
+  // Handle project creation success
+  const handleProjectCreated = async () => {
+    if (user?.token) {
+      try {
+        const response = await getAllProjects(user.token);
+        setProjects(response);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    }
+  };
 
   // Format user data for NavUser component
   const userData = {
@@ -164,14 +72,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: user?.image || "",
   };
 
+  // Main navigation items
+  const mainNavItems = [
+    {
+      title: "Dashboard",
+      icon: <LayoutDashboard className="h-4 w-4" />,
+      href: "/dashboard",
+    },
+    {
+      title: "My Tasks",
+      icon: <LayoutList className="h-4 w-4" />,
+      href: "/dashboard/tasks",
+    },
+  ];
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <LogoSidebar />
       </SidebarHeader>
-      <SidebarContent>
-        <ProjectNav items={projects} />
-        <MenuNav projects={data.projects} />
+      <SidebarContent className="overflow-x-hidden">
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarMenu>
+            {mainNavItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title}>
+                  <Link href={item.href}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Projects Section */}
+        {projects && projects.length > 0 ? (
+          <ProjectNav items={projects} />
+        ) : (
+          <SidebarGroup>
+            <SidebarGroupLabel>Projects</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <CreateProjectDialog
+                  token={user?.token}
+                  onProjectCreated={handleProjectCreated}
+                  open={createDialogOpen}
+                  onOpenChange={setCreateDialogOpen}
+                  triggerButton={
+                    <SidebarMenuButton tooltip="Create Project">
+                      <Plus className="h-4 w-4" />
+                      <span>Create Project</span>
+                    </SidebarMenuButton>
+                  }
+                />
+              </SidebarMenuItem>
+              <div className="px-2 py-3 text-xs text-muted-foreground">
+                No projects yet. Create one to get started.
+              </div>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />

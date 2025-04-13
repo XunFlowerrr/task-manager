@@ -33,22 +33,22 @@ type ProjectWithUIState = Project & {
 const subMenuItems = [
   {
     title: "Project Dashboard",
-    icons: <House />,
+    icons: <House className="h-3.5 w-3.5" />,
     href: "", // Base path will be appended with project ID
   },
   {
     title: "Tasks",
-    icons: <LayoutList />,
+    icons: <LayoutList className="h-3.5 w-3.5" />,
     href: "/tasks",
   },
   {
     title: "Members",
-    icons: <UsersRound />,
+    icons: <UsersRound className="h-3.5 w-3.5" />,
     href: "/team",
   },
   {
     title: "Settings",
-    icons: <Settings />,
+    icons: <Settings className="h-3.5 w-3.5" />,
     href: "/settings",
   },
 ];
@@ -58,11 +58,18 @@ export function ProjectNav({ items }: { items: Project[] | undefined }) {
     return null;
   }
 
+  // Filter out duplicate projects based on project_id before mapping
+  const uniqueItems = items.filter(
+    (item, index, self) =>
+      index === self.findIndex((t) => t.project_id === item.project_id)
+  );
+
   return (
-    <SidebarGroup>
+    <SidebarGroup className="overflow-x-hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
+        {/* Map over the uniqueItems array instead of items */}
+        {uniqueItems.map((item) => (
           <Collapsible
             key={item.project_id}
             asChild
@@ -74,7 +81,7 @@ export function ProjectNav({ items }: { items: Project[] | undefined }) {
                 <SidebarMenuButton tooltip={item.project_name}>
                   {/* Using category as an optional filter for showing an icon */}
                   <span>{item.project_name}</span>
-                  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -87,7 +94,7 @@ export function ProjectNav({ items }: { items: Project[] | undefined }) {
                         >
                           <div className="flex items-center gap-2">
                             {subItem.icons}
-                            <span>{subItem.title}</span>
+                            <span className="text-xs">{subItem.title}</span>
                           </div>
                         </Link>
                       </SidebarMenuSubButton>

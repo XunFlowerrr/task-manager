@@ -1,0 +1,285 @@
+"use client";
+
+import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { ReduxSidebarProvider } from "@/components/ui/redux-sidebar";
+import { BreadcrumbHelper } from "@/components/ui/breadcrumb-helper";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { getAllTasks, Task, deleteTask } from "@/lib/api/tasks";
+import { getProject, Project } from "@/lib/api/projects";
+import { TaskList } from "@/components/task-list";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
+import { EditTaskDialog } from "@/components/edit-task-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+export default function ProjectTasksPage() {
+  const { user, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const projectId = params.id as string;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Dialog states
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
+
+  // Fetch project details and tasks
+  useEffect(() => {
+    const fetchData = async () => {
+      if (user?.token && projectId) {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const [projectData, tasksData] = await Promise.all([
+            getProject(projectId, user.token),
+            getAllTasks(projectId, user.token),
+          ]);
+          setProject(projectData);
+          setTasks(tasksData);
+        } catch (err) {
+          console.error("Failed to fetch project tasks:", err);
+          const errorMessage =
+            err instanceof Error ? err.message : "Failed to load project data";
+          setError(errorMessage);
+          toast.error("Failed to load project tasks.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated, user?.token, projectId]);
+
+  // Filter tasks based on URL query parameters (e.g., ?status=completed)
+  const filteredTasks = useMemo(() => {
+    const statusFilter = searchParams.get("status");
+    const dueFilter = searchParams.get("due"); // e.g., 'soon'
+
+    return tasks.filter((task) => {
+      let keep = true;
+      if (statusFilter && task.status !== statusFilter) {
+        keep = false;
+      }
+      if (dueFilter === "soon") {
+        if (!task.due_date) {
+          keep = false;
+        } else {
+          const dueDate = new Date(task.due_date);
+          const today = new Date();
+          const diffTime = dueDate.getTime() - today.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (
+            !(diffDays <= 3 && diffDays >= 0 && task.status !== "completed")
+          ) {
+            keep = false;
+          }
+        }
+      }
+      // Add more filters here if needed
+      return keep;
+    });
+  }, [tasks, searchParams]);
+
+  const refreshTasks = async () => {
+    if (user?.token) {
+      try {
+        const tasksData = await getAllTasks(projectId, user.token);
+        setTasks(tasksData);
+      } catch (error) {
+        console.error("Failed to refresh tasks:", error);
+        toast.error("Failed to refresh task list.");
+      }
+    }
+  };
+
+  const handleTaskCreated = () => {
+    refreshTasks();
+    setCreateTaskOpen(false);
+    toast.success("Task created successfully!");
+  };
+
+  const handleTaskUpdated = () => {
+    refreshTasks();
+    setEditTaskOpen(false); // Close edit dialog
+    setEditingTask(null);
+    toast.success("Task updated successfully!");
+  };
+
+  const handleEditTaskClick = (taskId: string) => {
+    const taskToEdit = tasks.find((task) => task.task_id === taskId);
+    if (taskToEdit) {
+      setEditingTask(taskToEdit);
+      setEditTaskOpen(true);
+    } else {
+      toast.error("Could not find the task to edit.");
+    }
+  };
+
+  const handleDeleteTaskClick = (taskId: string) => {
+    setDeletingTaskId(taskId);
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deletingTaskId || !user?.token) return;
+
+    try {
+      await deleteTask(deletingTaskId, user.token);
+      toast.success("Task deleted successfully.");
+      refreshTasks(); // Refresh the list after deletion
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+      toast.error(
+        `Failed to delete task: ${
+          err instanceof Error ? err.message : "Please try again."
+        }`
+      );
+    } finally {
+      setDeletingTaskId(null);
+      setDeleteAlertOpen(false);
+    }
+  };
+
+  // Show loading state
+  if (!isAuthenticated || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading project tasks...
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-4 p-4">
+        <p className="text-destructive text-center">{error}</p>
+        <Button onClick={() => router.push("/dashboard")}>
+          Return to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <ReduxSidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <BreadcrumbHelper
+              routes={[
+                { label: "Dashboard", link: "/dashboard" },
+                { label: "Projects", link: "/dashboard/projects" },
+                {
+                  label: project?.project_name || projectId,
+                  link: `/dashboard/projects/${projectId}`,
+                },
+                { label: "Tasks" },
+              ]}
+            />
+          </div>
+          {/* Add Header actions if needed */}
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">Project Tasks</h1>
+              <p className="text-muted-foreground">
+                All tasks within the '{project?.project_name}' project.
+              </p>
+            </div>
+            <CreateTaskDialog
+              projectId={projectId}
+              token={user?.token}
+              onTaskCreated={handleTaskCreated}
+              open={createTaskOpen}
+              onOpenChange={setCreateTaskOpen}
+              triggerButton={
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" /> Add Task
+                </Button>
+              }
+            />
+          </div>
+          <TaskList
+            tasks={filteredTasks} // Use filtered tasks
+            isLoading={isLoading} // Already handled above, but pass for consistency
+            error={null} // Already handled above
+            title="Project Tasks"
+            showProjectColumn={false} // Don't show project column here
+            onEditTask={handleEditTaskClick}
+            onDeleteTask={handleDeleteTaskClick}
+          />
+        </main>
+      </SidebarInset>
+
+      {/* Dialogs */}
+      <EditTaskDialog
+        token={user?.token}
+        task={editingTask}
+        open={editTaskOpen}
+        onOpenChange={setEditTaskOpen}
+        onTaskUpdated={handleTaskUpdated}
+      />
+
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              task and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingTaskId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTask}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </ReduxSidebarProvider>
+  );
+}

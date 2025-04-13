@@ -34,11 +34,11 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 6;
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -76,7 +76,6 @@ export default function Dashboard() {
     if (!user?.token) return;
 
     try {
-      // Use the client version with the token from user context
       const fetchedTasks = await getUserTasks(user.token!);
       setTasks(fetchedTasks);
     } catch (error) {
@@ -85,11 +84,38 @@ export default function Dashboard() {
     }
   };
 
-  // Client-side pagination logic
-  const totalPages = Math.ceil(projects.length / ITEMS_PER_PAGE);
+  // Filter projects for uniqueness *before* pagination
+  const uniqueProjects = projects.filter(
+    (project, index, self) =>
+      index === self.findIndex((p) => p.project_id === project.project_id)
+  );
+
+  // Client-side pagination logic using unique projects
+  const totalPages = Math.ceil(uniqueProjects.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedProjects = projects.slice(startIndex, endIndex);
+  const currentProjects = uniqueProjects.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleProjectCreated = () => {
+    fetchProjects();
+    toast.success("Project created successfully!");
+  };
+
+  // Calculate summary counts
+  const totalProjects = uniqueProjects.length;
+  const upcomingTasks = tasks.filter(
+    (task) => task.due_date && new Date(task.due_date) > new Date()
+  ).length;
+  const overdueTasks = tasks.filter(
+    (task) =>
+      task.due_date &&
+      new Date(task.due_date) < new Date() &&
+      task.status !== "completed"
+  ).length;
 
   // If not authenticated, show minimal UI while redirecting
   if (!isAuthenticated) {
@@ -136,7 +162,7 @@ export default function Dashboard() {
             <SummaryCard
               icon={<Folders />}
               label="Total Projects"
-              data={projects?.length || 0}
+              data={totalProjects || 0}
               onClick={{ url: "/projects" }}
             />
           </div>
@@ -146,7 +172,9 @@ export default function Dashboard() {
               <h2 className="text-xl font-semibold">Projects</h2>
               <CreateProjectDialog
                 token={user?.token}
-                onProjectCreated={fetchProjects}
+                onProjectCreated={handleProjectCreated}
+                open={createProjectOpen}
+                onOpenChange={setCreateProjectOpen}
                 triggerButton={
                   <Button size="sm">
                     <Plus className="mr-2 h-4 w-4" /> New Project
@@ -165,7 +193,7 @@ export default function Dashboard() {
                 <Info className="w-5 h-5 mr-2" />
                 <span>{error}</span>
               </div>
-            ) : projects.length === 0 ? (
+            ) : uniqueProjects.length === 0 ? (
               <div className="bg-muted p-8 rounded-md text-center">
                 <Folders className="w-10 h-10 mx-auto text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-medium">No projects found</h3>
@@ -174,9 +202,9 @@ export default function Dashboard() {
                 </p>
                 <CreateProjectDialog
                   token={user?.token}
-                  onProjectCreated={fetchProjects}
-                  open={open}
-                  onOpenChange={setOpen}
+                  onProjectCreated={handleProjectCreated}
+                  open={createProjectOpen}
+                  onOpenChange={setCreateProjectOpen}
                   triggerButton={
                     <Button className="mt-4">
                       <Plus className="mr-2 h-4 w-4" /> Create a project
@@ -187,7 +215,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <div className="space-y-4">
-                  {paginatedProjects.map((project) => (
+                  {currentProjects.map((project) => (
                     <Link
                       href={`/dashboard/projects/${project.project_id}`}
                       key={project.project_id}

@@ -9,7 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getProject, Project } from "@/lib/api/projects";
-import { getAllTasks, Task } from "@/lib/api/tasks";
+import { getAllTasks, Task, deleteTask } from "@/lib/api/tasks";
+import { getProjectMembers, ProjectMember } from "@/lib/api/projectMembers";
 import SummaryCard from "@/components/summary-card";
 import {
   CalendarClock,
@@ -22,15 +23,33 @@ import {
   Plus,
   UserPlus,
   Download,
+  MoreVertical,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
+import { EditTaskDialog } from "@/components/edit-task-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { InviteMemberDialog } from "@/components/invite-member-dialog";
 
 export default function ProjectDashboard() {
   const { isAuthenticated, user } = useAuth();
@@ -40,35 +59,57 @@ export default function ProjectDashboard() {
 
   const [project, setProject] = useState<Project>();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [teamMembers, setTeamMembers] = useState<ProjectMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
 
-    // Only fetch data if authenticated and we have a token
     if (user?.token) {
       const fetchProjectData = async () => {
         try {
           setLoading(true);
+          setError(null);
 
-          // Fetch project details
-          const projectData = await getProject(projectId, user.token);
+          const [projectData, tasksData, membersData] = await Promise.all([
+            getProject(projectId, user.token),
+            getAllTasks(projectId, user.token),
+            getProjectMembers(projectId, user.token),
+          ]);
+
           console.log("Project Data Dash:", projectData);
           setProject(projectData);
-
-          // Fetch project tasks
-          const tasksData = await getAllTasks(projectId, user.token);
           setTasks(tasksData);
+          setTeamMembers(membersData);
 
           setLoading(false);
         } catch (error) {
           console.error("Failed to fetch project data:", error);
-          setError("Failed to load project data. Please try again later.");
+          let errorMessage =
+            "An unexpected error occurred. Please try again later.";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+            if (
+              error.name === "SyntaxError" &&
+              error.message.includes("JSON")
+            ) {
+              errorMessage = `Received invalid data from the server. ${error.message}`;
+              console.error("Response body likely not JSON.");
+            } else {
+              errorMessage = `Failed to load project data: ${error.message}`;
+            }
+          }
+          setError(errorMessage);
           setLoading(false);
         }
       };
@@ -77,7 +118,67 @@ export default function ProjectDashboard() {
     }
   }, [isAuthenticated, router, user, projectId]);
 
-  // If not authenticated, show minimal UI while redirecting
+  const refreshTasks = async () => {
+    if (user?.token) {
+      try {
+        const tasksData = await getAllTasks(projectId, user.token);
+        setTasks(tasksData);
+      } catch (error) {
+        console.error("Failed to refresh tasks:", error);
+        toast.error("Failed to refresh task list.");
+      }
+    }
+  };
+
+  const handleTaskCreated = () => {
+    refreshTasks();
+    setCreateTaskOpen(false);
+  };
+
+  const handleTaskUpdated = () => {
+    refreshTasks();
+    setEditingTask(null);
+  };
+
+  const handleEditTask = (taskId: string) => {
+    const taskToEdit = tasks.find((task) => task.task_id === taskId);
+    if (taskToEdit) {
+      setEditingTask(taskToEdit);
+      setEditTaskOpen(true);
+    } else {
+      toast.error("Could not find the task to edit.");
+    }
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setDeletingTaskId(taskId);
+    setDeleteAlertOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deletingTaskId) return;
+
+    try {
+      await deleteTask(deletingTaskId, user?.token);
+      toast.success("Task deleted successfully.");
+      refreshTasks();
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+      toast.error(
+        `Failed to delete task: ${
+          err instanceof Error ? err.message : "Please try again."
+        }`
+      );
+    } finally {
+      setDeletingTaskId(null);
+      setDeleteAlertOpen(false);
+    }
+  };
+
+  const handleMembersAdded = () => {
+    toast.success("Member(s) added successfully.");
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -86,7 +187,6 @@ export default function ProjectDashboard() {
     );
   }
 
-  // If loading, show a loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -95,7 +195,6 @@ export default function ProjectDashboard() {
     );
   }
 
-  // If error, show error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4">
@@ -110,7 +209,6 @@ export default function ProjectDashboard() {
     );
   }
 
-  // Calculate task statistics
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(
     (task) => task.status === "completed"
@@ -128,13 +226,11 @@ export default function ProjectDashboard() {
     return diffDays <= 3 && diffDays >= 0 && task.status !== "completed";
   }).length;
 
-  // Format dates properly with validation
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Unknown";
 
     try {
       const date = new Date(dateString);
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         return "Unknown";
       }
@@ -144,12 +240,10 @@ export default function ProjectDashboard() {
     }
   };
 
-  // Use the correct property names from backend response
   const createdDate = formatDate(project?.created_date);
   const updatedDate = formatDate(project?.updated_date);
 
-  // Project members count (using a placeholder value for now)
-  const teamMembersCount = 0; // This would ideally be fetched from API
+  const teamMembersCount = teamMembers.length;
 
   return (
     <ReduxSidebarProvider>
@@ -178,35 +272,45 @@ export default function ProjectDashboard() {
                 {project?.project_description || "No description"}
               </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/projects/${projectId}/tasks/new`}>
+            <div className="flex gap-2">
+              <CreateTaskDialog
+                projectId={projectId}
+                token={user?.token}
+                onTaskCreated={handleTaskCreated}
+                open={createTaskOpen}
+                onOpenChange={setCreateTaskOpen}
+                triggerButton={
+                  <Button>
                     <Plus className="mr-2 h-4 w-4" /> Add Task
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/projects/${projectId}/team/invite`}>
+                  </Button>
+                }
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setCreateTaskOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setInviteDialogOpen(true)}>
                     <UserPlus className="mr-2 h-4 w-4" /> Invite Team Member
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/projects/${projectId}/export`}>
-                    <Download className="mr-2 h-4 w-4" /> Export Project
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/projects/${projectId}/settings`}>
-                    <Settings className="mr-2 h-4 w-4" /> Settings
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/projects/${projectId}/export`}>
+                      <Download className="mr-2 h-4 w-4" /> Export Project
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/projects/${projectId}/settings`}>
+                      <Settings className="mr-2 h-4 w-4" /> Settings
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <div className="grid auto-rows-min gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -250,31 +354,71 @@ export default function ProjectDashboard() {
 
           <div className="space-y-4 mt-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {/* Recent Activity Panel */}
               <div className="bg-card text-card-foreground p-4 rounded-xl shadow-sm">
-                <h2 className="text-lg font-medium mb-4">Recent Tasks</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-medium">Recent Tasks</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCreateTaskOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Add
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   {tasks.slice(0, 5).map((task) => (
                     <div
                       key={task.task_id}
-                      className="flex items-start justify-between p-2 hover:bg-muted/50 rounded-md"
+                      className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md group"
                     >
-                      <div>
-                        <div className="font-medium">{task.task_name}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-xs">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {task.task_name}
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate">
                           {task.task_description || "No description"}
                         </div>
                       </div>
-                      <div
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          task.status === "completed"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                            : task.status === "in-progress"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {task.status}
+                      <div className="flex items-center ml-2">
+                        <div
+                          className={`px-2 py-1 text-xs rounded-full mr-2 ${
+                            task.status === "completed"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                              : task.status === "in-progress"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {task.status}
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Task options</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditTask(task.task_id)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteTask(task.task_id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
@@ -286,7 +430,6 @@ export default function ProjectDashboard() {
                 </div>
               </div>
 
-              {/* Project Info Panel */}
               <div className="bg-card text-card-foreground p-4 rounded-xl shadow-sm">
                 <h2 className="text-lg font-medium mb-4">Project Details</h2>
                 <div className="space-y-3">
@@ -306,7 +449,6 @@ export default function ProjectDashboard() {
                     </div>
                     <div>{updatedDate}</div>
                   </div>
-                  {/* Project progress bar */}
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">
                       Progress
@@ -336,6 +478,42 @@ export default function ProjectDashboard() {
           </div>
         </div>
       </SidebarInset>
+
+      <EditTaskDialog
+        token={user?.token}
+        task={editingTask}
+        open={editTaskOpen}
+        onOpenChange={setEditTaskOpen}
+        onTaskUpdated={handleTaskUpdated}
+      />
+
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              task and remove its data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingTaskId(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTask}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <InviteMemberDialog
+        projectId={projectId}
+        token={user?.token}
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        onMembersAdded={handleMembersAdded}
+      />
     </ReduxSidebarProvider>
   );
 }

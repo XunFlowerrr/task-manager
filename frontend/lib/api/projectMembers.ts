@@ -8,7 +8,7 @@ export interface ProjectMember {
   project_id: string;
   username?: string;
   email?: string;
-  joined_at: string;
+  joined_at?: string; // Make joined_at optional
 }
 
 /**
@@ -33,11 +33,24 @@ export async function addProjectMember(projectId: string, userId: string, token?
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to add project member");
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch (jsonError) {
+      throw new Error(
+        `Failed to add project member: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    throw new Error(errorData?.error || `Failed to add project member: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    console.error("Failed to parse successful response JSON (addProjectMember):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -61,11 +74,24 @@ export async function removeProjectMember(projectId: string, userId: string, tok
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to remove project member");
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch (jsonError) {
+      throw new Error(
+        `Failed to remove project member: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    throw new Error(errorData?.error || `Failed to remove project member: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    console.error("Failed to parse successful response JSON (removeProjectMember):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -89,9 +115,22 @@ export async function getProjectMembers(projectId: string, token?: string): Prom
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to get project members");
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch (jsonError) {
+      throw new Error(
+        `Failed to get project members: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    throw new Error(errorData?.error || `Failed to get project members: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    console.error("Failed to parse successful response JSON (getProjectMembers):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }

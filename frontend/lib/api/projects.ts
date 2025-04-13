@@ -50,11 +50,27 @@ export async function createProject(data: CreateProjectData, token?: string): Pr
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to create project");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to create project: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to create project: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 201 Created but invalid JSON
+    console.error("Failed to parse successful response JSON (createProject):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -74,11 +90,27 @@ export async function getAllProjectsClient(token: string): Promise<Project[]> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to fetch projects");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to fetch projects (client): ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to fetch projects (client): ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 200 OK but invalid JSON
+    console.error("Failed to parse successful response JSON (getAllProjectsClient):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -102,11 +134,27 @@ export async function getAllProjects(token?: string): Promise<Project[]> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to fetch projects");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to fetch projects: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to fetch projects: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 200 OK but invalid JSON
+    console.error("Failed to parse successful response JSON (getAllProjects):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -130,11 +178,27 @@ export async function getProject(id: string, token?: string): Promise<Project> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to fetch project");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to fetch project: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to fetch project: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 200 OK but invalid JSON
+    console.error("Failed to parse successful response JSON (getProject):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -159,11 +223,27 @@ export async function updateProject(id: string, data: UpdateProjectData, token?:
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to update project");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to update project: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to update project: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 200 OK but invalid JSON
+    console.error("Failed to parse successful response JSON (updateProject):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
 
 /**
@@ -187,9 +267,31 @@ export async function deleteProject(id: string, token?: string): Promise<{ messa
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to delete project");
+    const errorText = await response.text(); // Read body as text first
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText); // Try parsing the text
+    } catch (jsonError) {
+      // If parsing fails, use the raw text
+      throw new Error(
+        `Failed to delete project: ${response.status} ${response.statusText}. Server responded with: ${errorText}`
+      );
+    }
+    // If parsing succeeds, use the parsed error message if available
+    throw new Error(errorData?.error || `Failed to delete project: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  // For DELETE, often a 204 No Content is returned, or sometimes a 200/202 with a message.
+  // Handle 204 specifically as it has no body.
+  if (response.status === 204) {
+    return { message: "Project deleted successfully" };
+  }
+
+  try {
+    return await response.json();
+  } catch (jsonError) {
+    // If server sends 200 OK but invalid JSON
+    console.error("Failed to parse successful response JSON (deleteProject):", jsonError);
+    throw new Error(`Received OK status (${response.status}) but failed to parse JSON response.`);
+  }
 }
