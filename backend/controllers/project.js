@@ -20,6 +20,8 @@ export async function createProject(req, res) {
       "createProject: Project id generation response: " + JSON.stringify(idRes)
     );
     const projectId = idRes.rows[0].id;
+    const ownerId = req.user.userId;
+
     await query(
       `INSERT INTO project (project_id, project_name, project_description, owner_id, category)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -27,14 +29,21 @@ export async function createProject(req, res) {
         projectId,
         sanitizedProjectName,
         sanitizedProjectDescription,
-        req.user.userId,
+        ownerId,
         sanitizedCategory,
       ]
     );
     log.debug("createProject: Insert query complete for project " + projectId);
-    log.info(
-      `createProject: Project ${projectId} created by user ${req.user.userId}`
+
+    await query(
+      `INSERT INTO project_member (project_id, user_id) VALUES ($1, $2)`,
+      [projectId, ownerId]
     );
+    log.debug(
+      `createProject: Owner ${ownerId} added to project_member for project ${projectId}`
+    );
+
+    log.info(`createProject: Project ${projectId} created by user ${ownerId}`);
     res.status(201).json({ message: "Project created", projectId });
   } catch (error) {
     log.error("createProject error: " + error);
