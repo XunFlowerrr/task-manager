@@ -33,13 +33,15 @@ CREATE TABLE task(
   CONSTRAINT fk_project FOREIGN KEY (project_id) REFERENCES project(project_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Updated Attachment Table
 CREATE TABLE attachment(
   attachment_id CHAR(5) PRIMARY KEY,
-  attachment_name VARCHAR(100) NOT NULL,
   task_id CHAR(5) NOT NULL,
-  file_url VARCHAR(1000),
-  file_type VARCHAR(20) NOT NULL,
-  created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  file_name VARCHAR(255) NOT NULL,       -- Original name of the file (was attachment_name)
+  file_path VARCHAR(255) NOT NULL UNIQUE, -- Name/path of the file stored on the server (was file_url)
+  file_type VARCHAR(100),                -- MIME type (updated length)
+  file_size BIGINT,                      -- Size in bytes (added)
+  uploaded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- Timestamp of upload (was created_date)
   CONSTRAINT fk_task FOREIGN KEY (task_id) REFERENCES task(task_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -88,6 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Keep the existing attachment ID generation function
 CREATE OR REPLACE FUNCTION generate_attachment_id() RETURNS CHAR(5) AS $$
 DECLARE
     max_id INT;
