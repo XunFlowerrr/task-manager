@@ -3,24 +3,27 @@ import { authOptions } from "../auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
 
+// Interface for assignee details included in task data
 export interface Assignee {
   user_id: string;
-  username?: string;
-  email?: string;
+  username?: string | null; // Ensure username is included (optional)
+  email?: string | null;    // Ensure email is included (optional)
 }
 
+// Main Task interface
 export interface Task {
   task_id: string;
   project_id: string;
   task_name: string;
   task_description?: string | null;
-  start_date?: string | null; // Format: YYYY-MM-DD
-  due_date?: string | null; // Format: YYYY-MM-DD
+  start_date?: string | null; // Format: YYYY-MM-DDTHH:mm:ss.sssZ
+  due_date?: string | null; // Format: YYYY-MM-DDTHH:mm:ss.sssZ
   status: "pending" | "in-progress" | "completed";
-  priority: number; // Assuming 1=Low, 2=Medium, 3=High
-  created_date: string;
-  updated_date: string;
-  assignees?: Assignee[];
+  priority: number; // e.g., 1 (Low), 2 (Medium), 3 (High)
+  created_at: string;
+  updated_at: string;
+  project_name?: string; // Included in getUserTasks
+  assignees: Assignee[] | null; // Use the updated Assignee interface
 }
 
 export interface CreateTaskData {

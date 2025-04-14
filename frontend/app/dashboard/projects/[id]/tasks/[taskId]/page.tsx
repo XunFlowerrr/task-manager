@@ -78,6 +78,8 @@ import {
   formatPriority,
   getPriorityBadgeVariant,
   getStatusBadgeVariant,
+  generateGradientBackground,
+  getInitials,
 } from "@/lib/utils";
 import { AttachmentPreviewModal } from "@/components/ui/AttachmentPreviewModal";
 import { EditTaskDialog } from "@/components/edit-task-dialog";
@@ -443,12 +445,16 @@ export default function TaskDetailPage() {
                           <Tooltip key={assignee.user_id}>
                             <TooltipTrigger asChild>
                               <Avatar className="inline-block h-6 w-6 rounded-full ring-2 ring-background">
-                                <AvatarImage
-                                  src={`https://avatar.vercel.sh/${assignee.email}.png`}
-                                  alt={assignee.username}
-                                />
-                                <AvatarFallback>
-                                  {assignee.username?.charAt(0).toUpperCase()}
+                                <AvatarFallback
+                                  style={{
+                                    background: generateGradientBackground(
+                                      assignee.username || assignee.user_id
+                                    ),
+                                    color: "white",
+                                    fontSize: "0.7rem",
+                                  }}
+                                >
+                                  {getInitials(assignee.username)}
                                 </AvatarFallback>
                               </Avatar>
                             </TooltipTrigger>

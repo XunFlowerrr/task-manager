@@ -104,13 +104,15 @@ export async function getAllTasks(req, res) {
     if (membershipCheck.rowCount === 0)
       return res.status(403).json({ error: "Not authorized" });
 
-    // Get tasks with their assignees
+    // Get tasks with their assignees including username and email
     const result = await query(
       `SELECT t.*,
-        (SELECT json_agg(json_build_object('user_id', ta.user_id))
+        (SELECT json_agg(json_build_object('user_id', u.user_id, 'username', u.username, 'email', u.email))
          FROM task_assignee ta
+         JOIN users u ON ta.user_id = u.user_id
          WHERE ta.task_id = t.task_id) as assignees
-       FROM task t WHERE t.project_id = $1`,
+       FROM task t WHERE t.project_id = $1
+       ORDER BY t.due_date ASC NULLS LAST, t.priority DESC`, // Optional: Added sorting
       [projectId]
     );
     log.info(

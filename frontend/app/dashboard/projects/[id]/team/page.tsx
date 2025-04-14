@@ -42,6 +42,8 @@ import { ReduxSidebarProvider } from "@/components/ui/redux-sidebar";
 import { BreadcrumbHelper } from "@/components/ui/breadcrumb-helper";
 import { getProject, Project } from "@/lib/api/projects";
 import { InviteMemberDialog } from "@/components/invite-member-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials, generateGradientBackground } from "@/lib/utils";
 
 export default function ProjectTeamPage() {
   const { isAuthenticated, user } = useAuth();
@@ -193,7 +195,7 @@ export default function ProjectTeamPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Username</TableHead>
+                  <TableHead>Member</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -203,12 +205,29 @@ export default function ProjectTeamPage() {
                   members.map((member) => (
                     <TableRow key={member.user_id}>
                       <TableCell className="font-medium">
-                        {member.username || "N/A"}
-                        {member.user_id === project?.owner_id && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            (Owner)
-                          </span>
-                        )}
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback
+                              style={{
+                                background: generateGradientBackground(
+                                  member.username || member.user_id
+                                ),
+                                color: "white",
+                                fontSize: "0.8rem",
+                              }}
+                            >
+                              {getInitials(member.username)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            {member.username || "N/A"}
+                            {member.user_id === project?.owner_id && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                (Owner)
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell>{member.email || "N/A"}</TableCell>
                       <TableCell className="text-right">
@@ -251,7 +270,7 @@ export default function ProjectTeamPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center">
+                    <TableCell colSpan={3} className="text-center">
                       No members found for this project.
                     </TableCell>
                   </TableRow>

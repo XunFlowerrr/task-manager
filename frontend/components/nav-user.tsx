@@ -26,15 +26,18 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { generateGradientBackground, getInitials } from "@/lib/utils";
 
 export function NavUser({
   user = {
+    id: "default-id",
     name: "User",
     email: "user@example.com",
     avatar: "",
   },
 }: {
   user?: {
+    id: string;
     name: string;
     email: string;
     avatar: string;
@@ -58,8 +61,17 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">
-                  {user.name?.substring(0, 2).toUpperCase() || "UN"}
+                <AvatarFallback
+                  className="rounded-lg"
+                  style={{
+                    background: generateGradientBackground(
+                      user.name || user.id
+                    ),
+                    color: "white",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -79,8 +91,17 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
-                    {user.name?.substring(0, 2).toUpperCase() || "UN"}
+                  <AvatarFallback
+                    className="rounded-lg"
+                    style={{
+                      background: generateGradientBackground(
+                        user.name || user.id
+                      ),
+                      color: "white",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">

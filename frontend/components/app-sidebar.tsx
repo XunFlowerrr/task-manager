@@ -28,7 +28,7 @@ import {
   Plus,
   Settings,
   FileText,
-  LayoutList, // Added for Tasks icon
+  LayoutList,
 } from "lucide-react";
 import { CreateProjectDialog } from "./create-project-dialog";
 
@@ -67,6 +67,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Format user data for NavUser component
   const userData = {
+    id: user?.id || "default-id",
     name: user?.name || "User",
     email: user?.email || "user@example.com",
     avatar: user?.image || "",
@@ -89,7 +90,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <LogoSidebar />
+        <Link href="/dashboard">
+          <LogoSidebar />
+        </Link>
       </SidebarHeader>
       <SidebarContent className="overflow-x-hidden">
         {/* Main Navigation */}

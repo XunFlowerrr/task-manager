@@ -24,6 +24,8 @@ import {
   formatPriority,
   getPriorityBadgeVariant,
   getStatusBadgeVariant,
+  generateGradientBackground,
+  getInitials, // Import getInitials from utils
 } from "@/lib/utils";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -44,17 +46,6 @@ interface TaskListProps {
   onDeleteTask?: (taskId: string) => void;
   // Add onAssigneeClick or similar if needed later
 }
-
-// Helper to get initials for Avatar fallback
-const getInitials = (name?: string): string => {
-  if (!name) return "?";
-  const names = name.split(" ");
-  if (names.length === 1) return names[0].charAt(0).toUpperCase();
-  return (
-    names[0].charAt(0).toUpperCase() +
-    names[names.length - 1].charAt(0).toUpperCase()
-  );
-};
 
 export function TaskList({
   tasks,
@@ -157,7 +148,15 @@ export function TaskList({
                         <TooltipTrigger asChild>
                           <Avatar className="h-6 w-6 border-2 border-background">
                             {/* Add AvatarImage if you have URLs */}
-                            <AvatarFallback>
+                            <AvatarFallback
+                              style={{
+                                background: generateGradientBackground(
+                                  assignee.username || assignee.user_id // Use username or ID as seed
+                                ),
+                                color: "white", // Ensure text is visible
+                                fontSize: "0.7rem", // Adjust font size if needed
+                              }}
+                            >
                               {getInitials(assignee.username)}
                             </AvatarFallback>
                           </Avatar>

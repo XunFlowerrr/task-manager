@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { debounce } from "lodash";
 import { searchUsers, UserSearchResult } from "@/lib/api/users";
 import { addProjectMember } from "@/lib/api/projectMembers";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials, generateGradientBackground } from "@/lib/utils";
 
 interface InviteMemberDialogProps {
   projectId: string;
@@ -190,11 +192,26 @@ export function InviteMemberDialog({
                     key={user.user_id}
                     className="flex items-center justify-between p-2 hover:bg-accent rounded-md"
                   >
-                    <div>
-                      <p className="text-sm font-medium">{user.username}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.email}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback
+                          style={{
+                            background: generateGradientBackground(
+                              user.username || user.user_id
+                            ),
+                            color: "white",
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          {getInitials(user.username)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{user.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
                     <Button
                       variant="ghost"
@@ -216,11 +233,29 @@ export function InviteMemberDialog({
               <h4 className="text-sm font-medium mb-2">Selected Users:</h4>
               <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
                 {stagedUsers.map((user) => (
-                  <Badge key={user.user_id} variant="secondary">
-                    {user.username}
+                  <Badge
+                    key={user.user_id}
+                    variant="secondary"
+                    className="flex items-center gap-1.5 pr-1"
+                  >
+                    <Avatar className="h-4 w-4">
+                      <AvatarFallback
+                        style={{
+                          background: generateGradientBackground(
+                            user.username || user.user_id
+                          ),
+                          color: "white",
+                          fontSize: "0.6rem",
+                          lineHeight: "1",
+                        }}
+                      >
+                        {getInitials(user.username)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{user.username}</span>
                     <button
                       onClick={() => handleRemoveUser(user.user_id)}
-                      className="ml-1.5 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                      className="ml-0.5 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
                       disabled={isAdding}
                       aria-label={`Remove ${user.username}`}
                     >

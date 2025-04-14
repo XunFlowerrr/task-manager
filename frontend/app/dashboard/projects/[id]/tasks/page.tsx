@@ -13,7 +13,7 @@ import { getProject, Project } from "@/lib/api/projects";
 import { TaskList } from "@/components/task-list";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Filter } from "lucide-react";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { EditTaskDialog } from "@/components/edit-task-dialog";
 import {
@@ -26,6 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ProjectTasksPage() {
   const { user, isAuthenticated } = useAuth();
@@ -83,35 +90,89 @@ export default function ProjectTasksPage() {
     }
   }, [isAuthenticated, user?.token, projectId]);
 
-  // Filter tasks based on URL query parameters (e.g., ?status=completed)
-  const filteredTasks = useMemo(() => {
-    const statusFilter = searchParams.get("status");
-    const dueFilter = searchParams.get("due"); // e.g., 'soon'
+  // Determine current filter value from URL params
+  const statusFilter = searchParams.get("status");
+  const dueFilter = searchParams.get("due");
+  let currentFilterValue = "all";
+  if (statusFilter === "completed") {
+    currentFilterValue = "completed";
+  } else if (statusFilter === "in-progress") {
+    currentFilterValue = "in-progress";
+  } else if (statusFilter === "pending") {
+    currentFilterValue = "pending";
+  } else if (dueFilter === "soon") {
+    currentFilterValue = "soon";
+  }
 
+  // Filter tasks based on URL query parameters
+  const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       let keep = true;
-      if (statusFilter && task.status !== statusFilter) {
-        keep = false;
+
+      // Status filter
+      if (statusFilter) {
+        if (statusFilter === "pending") {
+          if (task.status !== "pending" && task.status !== "in-progress") {
+            keep = false;
+          }
+        } else if (task.status !== statusFilter) {
+          keep = false;
+        }
       }
+
+      // Due date filter
       if (dueFilter === "soon") {
         if (!task.due_date) {
           keep = false;
         } else {
           const dueDate = new Date(task.due_date);
           const today = new Date();
-          const diffTime = dueDate.getTime() - today.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const threeDaysFromNow = new Date(today);
+          threeDaysFromNow.setDate(today.getDate() + 3);
           if (
-            !(diffDays <= 3 && diffDays >= 0 && task.status !== "completed")
+            dueDate < new Date(today.setHours(0, 0, 0, 0)) ||
+            dueDate > new Date(threeDaysFromNow.setHours(23, 59, 59, 999)) ||
+            task.status === "completed"
           ) {
             keep = false;
           }
         }
       }
-      // Add more filters here if needed
+
       return keep;
     });
   }, [tasks, searchParams]);
+
+  // Generate filter description
+  let filterDescription = `All tasks within the '${
+    project?.project_name || ""
+  }' project`;
+  if (currentFilterValue === "completed") {
+    filterDescription = "Showing: Completed Tasks";
+  } else if (currentFilterValue === "in-progress") {
+    filterDescription = "Showing: In-Progress Tasks";
+  } else if (currentFilterValue === "pending") {
+    filterDescription = "Showing: Pending Tasks";
+  } else if (currentFilterValue === "soon") {
+    filterDescription = "Showing: Tasks Due Soon (within 3 days)";
+  }
+
+  // Handler for changing the filter via Select
+  const handleFilterChange = (value: string) => {
+    let query = {};
+    if (value === "soon") {
+      query = { due: "soon" };
+    } else if (value === "completed") {
+      query = { status: "completed" };
+    } else if (value === "in-progress") {
+      query = { status: "in-progress" };
+    } else if (value === "pending") {
+      query = { status: "pending" };
+    }
+
+    const params = new URLSearchParams(query);
+    router.push(`/dashboard/projects/${projectId}/tasks?${params.toString()}`);
+  };
 
   const refreshTasks = async () => {
     if (user?.token) {
@@ -133,7 +194,7 @@ export default function ProjectTasksPage() {
 
   const handleTaskUpdated = () => {
     refreshTasks();
-    setEditTaskOpen(false); // Close edit dialog
+    setEditTaskOpen(false);
     setEditingTask(null);
     toast.success("Task updated successfully!");
   };
@@ -159,7 +220,7 @@ export default function ProjectTasksPage() {
     try {
       await deleteTask(deletingTaskId, user.token);
       toast.success("Task deleted successfully.");
-      refreshTasks(); // Refresh the list after deletion
+      refreshTasks();
     } catch (err) {
       console.error("Failed to delete task:", err);
       toast.error(
@@ -173,7 +234,6 @@ export default function ProjectTasksPage() {
     }
   };
 
-  // Show loading state
   if (!isAuthenticated || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -182,7 +242,6 @@ export default function ProjectTasksPage() {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4 p-4">
@@ -217,42 +276,57 @@ export default function ProjectTasksPage() {
               ]}
             />
           </div>
-          {/* Add Header actions if needed */}
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
               <h1 className="text-2xl font-semibold">Project Tasks</h1>
-              <p className="text-muted-foreground">
-                All tasks within the '{project?.project_name}' project.
+              <p className="text-muted-foreground flex items-center gap-1 text-sm">
+                <Filter className="h-3 w-3" /> {filterDescription}
               </p>
             </div>
-            <CreateTaskDialog
-              projectId={projectId}
-              token={user?.token}
-              onTaskCreated={handleTaskCreated}
-              open={createTaskOpen}
-              onOpenChange={setCreateTaskOpen}
-              triggerButton={
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" /> Add Task
-                </Button>
-              }
-            />
+            <div className="flex gap-2 items-center w-full md:w-auto">
+              <Select
+                value={currentFilterValue}
+                onValueChange={handleFilterChange}
+              >
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Filter tasks..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Tasks</SelectItem>
+                  <SelectItem value="soon">Due Soon</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <CreateTaskDialog
+                projectId={projectId}
+                token={user?.token}
+                onTaskCreated={handleTaskCreated}
+                open={createTaskOpen}
+                onOpenChange={setCreateTaskOpen}
+                triggerButton={
+                  <Button size="sm">
+                    <Plus className="mr-2 h-4 w-4" /> Add Task
+                  </Button>
+                }
+              />
+            </div>
           </div>
           <TaskList
-            tasks={filteredTasks} // Use filtered tasks
-            isLoading={isLoading} // Already handled above, but pass for consistency
-            error={null} // Already handled above
+            tasks={filteredTasks}
+            isLoading={isLoading}
+            error={null}
             title="Project Tasks"
-            showProjectColumn={false} // Don't show project column here
+            showProjectColumn={false}
             onEditTask={handleEditTaskClick}
             onDeleteTask={handleDeleteTaskClick}
           />
         </main>
       </SidebarInset>
 
-      {/* Dialogs */}
       <EditTaskDialog
         token={user?.token}
         task={editingTask}

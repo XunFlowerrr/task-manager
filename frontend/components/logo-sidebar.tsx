@@ -1,8 +1,13 @@
+"use client";
+
 import React from "react";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "./ui/sidebar";
 import Image from "next/image";
+import { useTheme } from "next-themes"; // Import useTheme
 
 const LogoSidebar = () => {
+  const { resolvedTheme } = useTheme(); // Get the resolved theme
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -15,7 +20,10 @@ const LogoSidebar = () => {
           </div>
           <div className="w-full flex items-center justify-center p-4">
             <Image
-              src={"/logo-dark.png"}
+              // Conditionally set the src based on the theme
+              src={
+                resolvedTheme === "dark" ? "/logo-dark.png" : "/logo-light.png"
+              }
               alt="Logo"
               objectFit="cover"
               width="100"

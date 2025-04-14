@@ -26,6 +26,8 @@ import {
   MoreVertical,
   Edit,
   Trash2,
+  Eye,
+  Info, // Added Info icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -371,14 +373,17 @@ export default function ProjectDashboard() {
                       key={task.task_id}
                       className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md group"
                     >
-                      <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/dashboard/projects/${projectId}/tasks/${task.task_id}`}
+                        className="flex-1 min-w-0"
+                      >
                         <div className="font-medium truncate">
                           {task.task_name}
                         </div>
                         <div className="text-sm text-muted-foreground truncate">
                           {task.task_description || "No description"}
                         </div>
-                      </div>
+                      </Link>
                       <div className="flex items-center ml-2">
                         <div
                           className={`px-2 py-1 text-xs rounded-full mr-2 ${
@@ -403,6 +408,14 @@ export default function ProjectDashboard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/dashboard/projects/${projectId}/tasks/${task.task_id}`}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>View Details</span>
+                              </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleEditTask(task.task_id)}
                             >

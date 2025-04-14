@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAllProjectsClient, Project } from "@/lib/api/projects";
-import { Folders, Info, Plus } from "lucide-react";
+import { Folders, Info, Plus, AlertTriangle } from "lucide-react";
 import { getUserTasks, Task } from "@/lib/api/tasks";
 import SummaryCard from "@/components/summary-card";
 import { CalendarClock } from "lucide-react";
@@ -26,6 +26,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
+import { getTodayDateString } from "@/lib/utils";
 
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth();
@@ -107,10 +108,19 @@ export default function Dashboard() {
 
   // Calculate summary counts
   const totalProjects = uniqueProjects.length;
-  const upcomingTasks = tasks.filter(
-    (task) => task.due_date && new Date(task.due_date) > new Date()
+  const todayDateString = getTodayDateString();
+
+  const todayTasksCount = tasks.filter(
+    (task) =>
+      task.due_date?.split("T")[0] === todayDateString &&
+      task.status !== "completed"
   ).length;
-  const overdueTasks = tasks.filter(
+
+  const pendingTasksCount = tasks.filter(
+    (task) => task.status === "pending" || task.status === "in-progress"
+  ).length;
+
+  const overdueTasksCount = tasks.filter(
     (task) =>
       task.due_date &&
       new Date(task.due_date) < new Date() &&
@@ -141,29 +151,31 @@ export default function Dashboard() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <div className="grid auto-rows-min gap-4 md:grid-cols-2 lg:grid-cols-4">
             <SummaryCard
               icon={<CalendarClock />}
-              label="Total today tasks"
-              data={
-                tasks.filter(
-                  (task) =>
-                    task.due_date === new Date().toISOString().split("T")[0]
-                ).length || 0
-              }
-              onClick={{ url: "/tasks" }}
+              label="Due Today"
+              data={todayTasksCount}
+              onClick={{ url: "/dashboard/tasks?due=today" }}
             />
             <SummaryCard
               icon={<AlignLeft />}
-              label="Total pending tasks"
-              data={tasks.length || 0}
-              onClick={{ url: "/tasks" }}
+              label="Pending Tasks"
+              data={pendingTasksCount}
+              onClick={{ url: "/dashboard/tasks?status=pending" }}
+            />
+            <SummaryCard
+              icon={<AlertTriangle />}
+              label="Overdue Tasks"
+              data={overdueTasksCount}
+              onClick={{ url: "/dashboard/tasks?status=overdue" }}
+              variant="destructive"
             />
             <SummaryCard
               icon={<Folders />}
               label="Total Projects"
               data={totalProjects || 0}
-              onClick={{ url: "/projects" }}
+              onClick={{ url: "/dashboard" }}
             />
           </div>
 
