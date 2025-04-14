@@ -18,6 +18,7 @@ import {
   Attachment,
   getAttachmentDownloadUrl,
 } from "@/lib/api/attachments";
+import { useUploadThing } from "@/lib/uploadthing"; // Add this import
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -93,6 +94,10 @@ export default function TaskDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
   const taskId = params.taskId as string;
+
+  // Initialize UploadThing hook
+  const { startUpload, isUploading: isUploadThingUploading } =
+    useUploadThing("taskAttachment");
 
   const [project, setProject] = useState<Project | null>(null);
   const [task, setTask] = useState<Task | null>(null);
@@ -207,16 +212,51 @@ export default function TaskDetailPage() {
     if (!selectedFile || !user?.token || !taskId) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", selectedFile);
 
     try {
-      const result = await uploadAttachment(taskId, formData, user.token);
+      // Upload the file using UploadThing
+      const uploadResult = await startUpload([selectedFile]);
+
+      if (!uploadResult || uploadResult.length === 0) {
+        throw new Error("File upload failed");
+      }
+
+      // The first file's data
+      const uploadedFile = uploadResult[0];
+      console.log("UploadThing result:", uploadedFile);
+
+      // Now save the attachment metadata to our backend
+      const response = await fetch(`${API_URL}/attachments/metadata`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          taskId: taskId,
+          fileUrl: uploadedFile.url,
+          fileName: selectedFile.name,
+          fileType: selectedFile.type,
+          fileSize: selectedFile.size,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to save attachment metadata"
+        );
+      }
+
+      const result = await response.json();
+
+      // Update the UI
       setAttachments((prev) => [...prev, result.attachment]);
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+
       toast.success(result.message || "Attachment uploaded successfully.");
     } catch (err) {
       console.error("Failed to upload attachment:", err);
@@ -598,21 +638,25 @@ export default function TaskDetailPage() {
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     className="flex-grow"
-                    disabled={isUploading}
+                    disabled={isUploading || isUploadThingUploading}
                   />
                   <Button
                     onClick={handleUpload}
-                    disabled={!selectedFile || isUploading}
+                    disabled={
+                      !selectedFile || isUploading || isUploadThingUploading
+                    }
                   >
-                    {isUploading ? (
+                    {isUploading || isUploadThingUploading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <Upload className="mr-2 h-4 w-4" />
                     )}
-                    Upload
+                    {isUploading || isUploadThingUploading
+                      ? "Uploading..."
+                      : "Upload"}
                   </Button>
                 </div>
-                {selectedFile && !isUploading && (
+                {selectedFile && !isUploading && !isUploadThingUploading && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Selected: {selectedFile.name}
                   </p>

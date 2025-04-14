@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import NextAuthProvider from "@/providers/NextAuthProvider";
 import { ReduxProvider } from "@/providers/ReduxProvider";
+import UploadThingProvider from "@/providers/UploadThingProvider";
 import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
@@ -42,7 +43,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ReduxProvider>{children}</ReduxProvider>
+            <ReduxProvider>
+              <UploadThingProvider>{children}</UploadThingProvider>
+            </ReduxProvider>
             <Toaster position="top-right" />
           </ThemeProvider>
         </body>

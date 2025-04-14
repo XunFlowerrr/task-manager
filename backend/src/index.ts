@@ -12,15 +12,6 @@ const log = logger("index.ts");
 const app: Express = express();
 const port = config.port || 3000;
 
-// Ensure uploads directory exists
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.join(__dirname, "..", "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  log.info(`Created uploads directory at ${uploadsDir}`);
-}
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -46,5 +37,4 @@ app.use("/api/v1/users", userRouter);
 
 app.listen(port, () => {
   log.info(`Server is running on http://localhost:${port}`);
-  log.info(`Created uploads directory at ${uploadsDir}`);
 });

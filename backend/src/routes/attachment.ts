@@ -1,45 +1,46 @@
 import express, { Router } from "express";
-import multer from "multer";
-import path from "path";
+import { createRouteHandler } from "uploadthing/express";
 import { authMiddleware } from "../middleware/auth.js";
+import { uploadRouter } from "../config/uploadthing.js";
 import {
-  uploadAttachment,
   getAllAttachments,
   downloadAttachment,
   deleteAttachment,
+  saveAttachmentMetadata
 } from "../controllers/attachment.js";
-import { fileURLToPath } from "url";
+import { logger } from "../logger.js";
 
+const log = logger("attachment.routes.ts");
 const router: Router = express.Router();
-
-// Configure Multer
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsDir = path.join(__dirname, "..", "..", "uploads"); // Adjust path for src directory structure
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir); // Save files to the uploads directory
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename: timestamp + originalname
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Example: Limit file size to 10MB
-});
 
 // Apply auth middleware to all attachment routes
 router.use(authMiddleware);
 
-// Routes
+// Set up UploadThing routes
+const uploadthingExpressRouter = createRouteHandler({
+  router: uploadRouter,
+});
+
+// Mount UploadThing routes
+router.use("/uploadthing", uploadthingExpressRouter);
+
+// Add route for saving attachment metadata after successful upload
+router.post("/metadata", saveAttachmentMetadata);
+
+// Regular routes for attachment management
 router.get("/", getAllAttachments); // Get attachments (all user's or for specific task via query param ?taskId=...)
-router.post("/", upload.single("file"), uploadAttachment); // Upload a new attachment (expects form-data with 'file' field and 'taskId' field)
 router.get("/:id/download", downloadAttachment); // Download a specific attachment
 router.delete("/:id", deleteAttachment); // Delete a specific attachment
+
+// Log all routes
+if (process.env.NODE_ENV === "development") {
+  log.info("Attachment routes:");
+  // @ts-ignore - Express router._router is not in the type definitions
+  router._router?.stack?.forEach((r: any) => {
+    if (r.route && r.route.path) {
+      log.info(`${Object.keys(r.route.methods)} ${r.route.path}`);
+    }
+  });
+}
 
 export default router;
