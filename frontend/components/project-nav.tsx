@@ -21,8 +21,11 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar, // Import useSidebar
 } from "@/components/ui/sidebar";
 import { Project } from "@/lib/api/projects";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar components
+import { getInitials, generateGradientBackground } from "@/lib/utils"; // Import utils
 
 // Updated to use the Project type directly with optional icon and isActive
 type ProjectWithUIState = Project & {
@@ -54,6 +57,8 @@ const subMenuItems = [
 ];
 
 export function ProjectNav({ items }: { items: Project[] | undefined }) {
+  const { state } = useSidebar(); // Get sidebar state
+
   if (!items || items.length === 0) {
     return null;
   }
@@ -80,7 +85,23 @@ export function ProjectNav({ items }: { items: Project[] | undefined }) {
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton tooltip={item.project_name}>
                   {/* Using category as an optional filter for showing an icon */}
-                  <span>{item.project_name}</span>
+                  {state === "collapsed" ? ( // Check if collapsed
+                    <Avatar className="h-6 w-6 rounded-">
+                      <AvatarFallback
+                        style={{
+                          background: generateGradientBackground(
+                            item.project_name || item.project_id
+                          ),
+                          color: "white",
+                          fontSize: "0.7rem",
+                        }}
+                      >
+                        {getInitials(item.project_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <span>{item.project_name}</span> // Show full name if expanded
+                  )}
                   <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
