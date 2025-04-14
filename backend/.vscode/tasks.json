@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-and-start",
+      "type": "shell",
+      "command": "npm run build && node dist/index.js",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "group": "none",
+      "problemMatcher": []
+    }
+  ]
+}
