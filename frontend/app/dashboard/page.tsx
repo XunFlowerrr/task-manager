@@ -47,13 +47,15 @@ export default function Dashboard() {
       router.push("/login");
       return;
     }
+  }, [isAuthenticated, user, router]);
 
+  useEffect(() => {
     // Only fetch data if authenticated and we have a token
     if (user?.token) {
       fetchProjects();
       fetchTasks();
     }
-  }, [isAuthenticated, user, router]);
+  }, []);
 
   const fetchProjects = async () => {
     if (!user?.token) return;

@@ -74,10 +74,11 @@ export default function ProjectDashboard() {
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
-      return;
     }
+  }, [isAuthenticated, router]);
 
-    if (user?.token) {
+  useEffect(() => {
+    if (isAuthenticated && user?.token) {
       const fetchProjectData = async () => {
         try {
           setLoading(true);
@@ -118,7 +119,7 @@ export default function ProjectDashboard() {
 
       fetchProjectData();
     }
-  }, [isAuthenticated, router, user, projectId]);
+  }, []);
 
   const refreshTasks = async () => {
     if (user?.token) {

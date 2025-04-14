@@ -32,7 +32,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { cn } from "@/lib/utils";
+import { cn, getInitials, generateGradientBackground } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -41,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface EditTaskDialogProps {
   token?: string;
@@ -284,7 +285,22 @@ export function EditTaskDialog({
                         }
                         onSelect={(e) => e.preventDefault()}
                       >
-                        {member.username || member.email}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback
+                              style={{
+                                background: generateGradientBackground(
+                                  member.username || member.user_id
+                                ),
+                                color: "white",
+                                fontSize: "0.7rem",
+                              }}
+                            >
+                              {getInitials(member.username)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.username || member.email}
+                        </div>
                       </DropdownMenuCheckboxItem>
                     ))
                   ) : (

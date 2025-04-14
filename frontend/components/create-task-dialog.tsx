@@ -56,6 +56,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { getInitials, generateGradientBackground } from "@/lib/utils";
 
 interface CreateTaskDialogProps {
   token?: string;
@@ -284,7 +286,22 @@ export function CreateTaskDialog({
                         }
                         onSelect={(e) => e.preventDefault()}
                       >
-                        {member.username || member.email}
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback
+                              style={{
+                                background: generateGradientBackground(
+                                  member.username || member.user_id
+                                ),
+                                color: "white",
+                                fontSize: "0.7rem",
+                              }}
+                            >
+                              {getInitials(member.username)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {member.username || member.email}
+                        </div>
                       </DropdownMenuCheckboxItem>
                     ))
                   ) : (
